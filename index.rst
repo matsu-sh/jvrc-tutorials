@@ -13,6 +13,7 @@ Contents:
 
    install
    basics/index
+   advanced/index
 
 
 Indices and tables
