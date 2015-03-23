@@ -21,19 +21,23 @@ RTコンポーネントにおけるトルク指令の入力
 コントローラのヘッダのソースコードは以下になります。 ::
 
 
-このソースコードは 「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotControllerTorqueRTC.cpp」と 「model/robot/RTC/RobotControllerTorqueRTC.h」に保存されています。
+このソースコードは 「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotTorqueControllerRTC.cpp」と 「model/robot/RTC/RobotTorqueControllerRTC.h」に保存されています。
 
 コントローラのビルド
 --------------------
 
 「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに移動し、make コマンドを実行します。
 
-「model/robot/RTC/」ディレクトリに「RobotControllerTorqueRTC.so」というファイルが作成されるはずです。
+「model/robot/RTC/」ディレクトリに「RobotTorqueControllerRTC.so」というファイルが作成されるはずです。
+
+その後、次のコマンドを実行します。 ::
+
+   sudo make install DESTDIR=/usr
 
 コントローラの設定
 ------------------
 
-アイテムビューで「BodyRTC」を選択し、プロパティビューの「コントローラのモジュール名」を「RTC/RobotControllerTorqueRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
+アイテムビューで「BodyRTC」を選択し、プロパティビューの「コントローラのモジュール名」を「RobotTorqueControllerRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
 
 
 シミュレーションを実行する
