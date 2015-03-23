@@ -8,4 +8,4 @@
    :maxdepth: 2
 
    sensors
-
+   sensors_control
