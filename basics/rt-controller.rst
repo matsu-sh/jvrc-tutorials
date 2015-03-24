@@ -18,11 +18,155 @@ RTコンポーネントのコントローラの接続
 コントローラのソースコード
 --------------------------
 
-コントローラのソースコードは以下になります。 ::
+コントローラのソースコードは以下になります。Choreonoid の
+SR1WalkControllerRTC.cpp を基にしています。 ::
 
-コントローラのヘッダのソースコードは以下になります。 ::
+   /**
+      Sample Robot motion controller for the JVRC robot model.
+      This program was ported from the "SR1WalkControllerRTC.cpp" sample of
+      Choreonoid.
+   */
+   
+   #include "RobotControllerRTC.h"
+   #include <cnoid/BodyMotion>
+   #include <cnoid/ExecutablePath>
+   #include <cnoid/FileUtil>
+   #include <iostream>
+   
+   using namespace std;
+   using namespace cnoid;
+   
+   namespace {
+   
+   const char* samplepd_spec[] =
+   {
+       "implementation_id", "RobotControllerRTC",
+       "type_name",         "RobotControllerRTC",
+       "description",       "Robot Controller component",
+       "version",           "0.1",
+       "vendor",            "AIST",
+       "category",          "Generic",
+       "activity_type",     "DataFlowComponent",
+       "max_instance",      "10",
+       "language",          "C++",
+       "lang_type",         "compile",
+       ""
+   };
+   }
+   
+   
+   RobotControllerRTC::RobotControllerRTC(RTC::Manager* manager)
+       : RTC::DataFlowComponentBase(manager),
+         m_angleIn("q", m_angle)
+   {
+   
+   }
+   
+   RobotControllerRTC::~RobotControllerRTC()
+   {
+   
+   }
+   
+   
+   RTC::ReturnCode_t RobotControllerRTC::onInitialize()
+   {
+       // Set InPort buffers
+       addInPort("q", m_angleIn);
+   
+       return RTC::RTC_OK;
+   }
+   
+   RTC::ReturnCode_t RobotControllerRTC::onActivated(RTC::UniqueId ec_id)
+   {
+       return RTC::RTC_OK;
+   }
+   
+   
+   RTC::ReturnCode_t RobotControllerRTC::onDeactivated(RTC::UniqueId ec_id)
+   {
+       return RTC::RTC_OK;
+   }
+   
+   RTC::ReturnCode_t RobotControllerRTC::onExecute(RTC::UniqueId ec_id)
+   {
+       if(m_angleIn.isNew()){
+           m_angleIn.read();
+       }
+   
+       for(size_t i=0; i < m_angle.data.length(); ++i){
+               cout << "m_angle.data[" << i << "] is " << m_angle.data[i] << std::endl;
+       }
+   
+       return RTC::RTC_OK;
+   }
+   
+   
+   extern "C"
+   {
+       DLL_EXPORT void RobotControllerRTCInit(RTC::Manager* manager)
+       {
+           coil::Properties profile(samplepd_spec);
+           manager->registerFactory(profile,
+                                    RTC::Create<RobotControllerRTC>,
+                                    RTC::Delete<RobotControllerRTC>);
+       }
+   };
 
-このソースコードは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotControllerRTC.cpp」と「model/robot/RTC/RobotControllerRTC.h」に保存されています。
+コントローラのヘッダのソースコードは以下になります。Choreonoid の
+SR1WalkControllerRTC.h を基にしています。 ::
+
+   /**
+      Sample Robot motion controller for the JVRC robot model.
+      This program was ported from the "SR1WalkControllerRTC.h" sample of Choreonoid.
+   */
+   
+   #ifndef RobotControllerRTC_H
+   #define RobotControllerRTC_H
+   
+   #include <rtm/idl/BasicDataTypeSkel.h>
+   #include <rtm/Manager.h>
+   #include <rtm/DataFlowComponentBase.h>
+   #include <rtm/CorbaPort.h>
+   #include <rtm/DataInPort.h>
+   #include <rtm/DataOutPort.h>
+   #include <cnoid/MultiValueSeq>
+   
+   class RobotControllerRTC : public RTC::DataFlowComponentBase
+   {
+   public:
+       RobotControllerRTC(RTC::Manager* manager);
+       ~RobotControllerRTC();
+   
+       virtual RTC::ReturnCode_t onInitialize();
+       virtual RTC::ReturnCode_t onActivated(RTC::UniqueId ec_id);
+       virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
+       virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
+   
+   protected:
+       // DataInPort declaration
+       RTC::TimedDoubleSeq m_angle;
+       RTC::InPort<RTC::TimedDoubleSeq> m_angleIn;
+   };
+   
+   extern "C"
+   {
+       DLL_EXPORT void RobotControllerRTCInit(RTC::Manager* manager);
+   };
+   
+   #endif
+
+これらのソースコードは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotControllerRTC.cpp」と「model/robot/RTC/RobotControllerRTC.h」に保存されています。
+
+コントローラの設定
+------------------
+
+プロジェクト上でRTコンポーネント(RTC)を作成しただけでは、ロボットの制御を行うことができません。
+
+アイテムビューで「BodyRTC」を選択するとプロパティのタブ(プロパティビューと言います)にRTCの設定が表示されます。
+プロパティビューの「コントローラのモジュール名」を「RobotControllerRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
+さらに、プロパティビューの「自動ポート接続」を true にします。
+
+.. image:: images/property_rtc.png
 
 コントローラのビルド
 --------------------
@@ -35,21 +179,13 @@ RTコンポーネントのコントローラの接続
 
    sudo make install DESTDIR=/usr
 
-コントローラの設定
-------------------
-
-プロジェクト上でRTコンポーネント(RTC)を作成しただけでは、ロボットの制御を行うことができません。
-
-アイテムビューで「BodyRTC」を選択するとプロパティのタブ(プロパティビューと言います)にRTCの設定が表示されます。
-プロパティビューの「コントローラのモジュール名」を「RobotControllerRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
-
 シミュレーションを実行する
 --------------------------
 
 シミュレーションツールバーの「シミュレーション開始ボタン」を押します。
 シミュレーションを実行するとchoreonoidを実行している端末に関節角度が表示されるはずです。
 
-.. image:: images/simulation_no_controller.png
+.. image:: images/output.png
 
 このようにして得られる関節角度を基にトルクをロボットに入力することでロボットの制御を行うことができます。この後のサンプルで詳しく解説します。
 

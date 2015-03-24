@@ -15,13 +15,55 @@ RTコンポーネントにおけるトルク指令の入力
 コントローラのソースコード
 --------------------------
 
-コントローラのソースコードは以下になります。 ::
+コントローラのソースコードは以下になります。Choreonoid の
+SR1WalkControllerRTC.cpp を基にしています。 ::
 
 
-コントローラのヘッダのソースコードは以下になります。 ::
+
+コントローラのヘッダのソースコードは以下になります。Choreonoid の
+SR1WalkControllerRTC.h を基にしています。 ::
 
 
-このソースコードは 「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotTorqueControllerRTC.cpp」と 「model/robot/RTC/RobotTorqueControllerRTC.h」に保存されています。
+これらのソースコードは 「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotTorqueControllerRTC.cpp」と 「model/robot/RTC/RobotTorqueControllerRTC.h」に保存されています。
+
+コントローラの設定
+------------------
+
+アイテムビューで「BodyRTC」を選択し、プロパティビューの「コントローラのモジュール名」を「RobotTorqueControllerRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
+さらに、プロパティビューの「自動ポート接続」を true にします。
+
+.. image:: images/property_torque.png
+
+ポーズ列の追加
+--------------
+
+まずアイテムビューで「JVRC」を選択します。
+次に、「メニュー」の「ファイル」「新規」より「ポーズ列」を選択し「SampleMotion」という名前で追加します。
+
+.. image:: images/motion.png
+
+次に、「表示」の「ビューの表示」から「ポーズロール」を選択します。次の画面が表示されるはずです。
+
+.. image:: images/pose_role.png
+
+ポーズロールにおいて、1.0 を選択して「挿入」を押します。
+同様に 2.0, 3.0, 4.0 を選択して「挿入」を押します。
+
+ポーズロールは次のようになるはずです。
+
+.. image:: images/pose_role2.png
+
+
+プログラムで使用するモーションを生成させます。
+ツールバーから「ボディモーションの生成」ボタンを押します。
+
+.. image:: images/motion_toolbar.png
+
+SampleMotion の子供に motion があるので、これを選択し名前を付けて保存ボタンを押します。
+
+.. image:: images/item_motion.png
+
+「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに「RobotMotion.yaml」というファイルで保存します。
 
 コントローラのビルド
 --------------------
@@ -33,11 +75,6 @@ RTコンポーネントにおけるトルク指令の入力
 その後、次のコマンドを実行します。 ::
 
    sudo make install DESTDIR=/usr
-
-コントローラの設定
-------------------
-
-アイテムビューで「BodyRTC」を選択し、プロパティビューの「コントローラのモジュール名」を「RobotTorqueControllerRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
 
 
 シミュレーションを実行する
