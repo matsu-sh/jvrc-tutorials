@@ -18,8 +18,55 @@ RTコンポーネントのコントローラの接続
 コントローラのソースコード
 --------------------------
 
-コントローラのソースコードは以下になります。Choreonoid の
-SR1WalkControllerRTC.cpp を基にしています。 ::
+コントローラのヘッダのソースコードは以下になります。Choreonoidに含まれるサンプルのSR1WalkControllerRTC.hを基にしています。 ::
+
+   /**
+      Sample Robot motion controller for the JVRC robot model.
+      This program was ported from the "SR1WalkControllerRTC.h" sample of Choreonoid.
+   */
+   
+   #ifndef RobotControllerRTC_H
+   #define RobotControllerRTC_H
+   
+   #include <rtm/idl/BasicDataTypeSkel.h>
+   #include <rtm/Manager.h>
+   #include <rtm/DataFlowComponentBase.h>
+   #include <rtm/CorbaPort.h>
+   #include <rtm/DataInPort.h>
+   #include <rtm/DataOutPort.h>
+   #include <cnoid/MultiValueSeq>
+   
+   class RobotControllerRTC : public RTC::DataFlowComponentBase
+   {
+   public:
+       RobotControllerRTC(RTC::Manager* manager);
+       ~RobotControllerRTC();
+   
+       virtual RTC::ReturnCode_t onInitialize();
+       virtual RTC::ReturnCode_t onActivated(RTC::UniqueId ec_id);
+       virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
+       virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
+   
+   protected:
+       // DataInPort declaration
+       RTC::TimedDoubleSeq m_angle;
+       RTC::InPort<RTC::TimedDoubleSeq> m_angleIn;
+   };
+   
+   extern "C"
+   {
+       DLL_EXPORT void RobotControllerRTCInit(RTC::Manager* manager);
+   };
+   
+   #endif
+
+`RTC::TimedDoubleSeq` というのは、時刻情報とdouble型の実際の値を持つOpenRTM固有の複合型です。
+OpenRTMにおけるdouble型と考えておけばよいでしょう。
+
+`RTC::InPort<RTC::TimedDoubleSeq>` はRTCの入力ポートを表す型であり、入力ポートを操作するにはこれを利用します。
+m_angleは入力ポートから関節角度を受けとるための変数です。m_angleInで取得した値はm_angleで参照します。
+
+コントローラのソースコードは以下になります。Choreonoidに含まれるサンプルのSR1WalkControllerRTC.cppを基にしています。 ::
 
    /**
       Sample Robot motion controller for the JVRC robot model.
@@ -112,48 +159,14 @@ SR1WalkControllerRTC.cpp を基にしています。 ::
        }
    };
 
-コントローラのヘッダのソースコードは以下になります。Choreonoid の
-SR1WalkControllerRTC.h を基にしています。 ::
+RobotControllerRTCのコンストラクタで、 m_angleIn と m_angle を関連付けています。
 
-   /**
-      Sample Robot motion controller for the JVRC robot model.
-      This program was ported from the "SR1WalkControllerRTC.h" sample of Choreonoid.
-   */
-   
-   #ifndef RobotControllerRTC_H
-   #define RobotControllerRTC_H
-   
-   #include <rtm/idl/BasicDataTypeSkel.h>
-   #include <rtm/Manager.h>
-   #include <rtm/DataFlowComponentBase.h>
-   #include <rtm/CorbaPort.h>
-   #include <rtm/DataInPort.h>
-   #include <rtm/DataOutPort.h>
-   #include <cnoid/MultiValueSeq>
-   
-   class RobotControllerRTC : public RTC::DataFlowComponentBase
-   {
-   public:
-       RobotControllerRTC(RTC::Manager* manager);
-       ~RobotControllerRTC();
-   
-       virtual RTC::ReturnCode_t onInitialize();
-       virtual RTC::ReturnCode_t onActivated(RTC::UniqueId ec_id);
-       virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
-       virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
-   
-   protected:
-       // DataInPort declaration
-       RTC::TimedDoubleSeq m_angle;
-       RTC::InPort<RTC::TimedDoubleSeq> m_angleIn;
-   };
-   
-   extern "C"
-   {
-       DLL_EXPORT void RobotControllerRTCInit(RTC::Manager* manager);
-   };
-   
-   #endif
+RTCの初期化時に呼ばれるonInitialize()で、m_angleInをRTCの入力ポートqと関連づけています。
+
+onExecute()はRTCの実行中に定期的に呼ばれます。ここでは関節角度を取得し標準出力に表示する処理を行っています。
+m_angleIn.isNew()とは新しいデータが到着しているか確認する関数です。
+onExecute()の実行時にはデータが到着しているかどうかが分からないので、ここでチェックしています。新しいデータが来ていた場合にはm_angleIn.read()でデータを読み込みます。読み込んだデータは自動的にm_angleに格納され、m_angle.dataとして取得できます。
+m_angle.dataは各関節毎に配列の値となっています。
 
 これらのソースコードは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotControllerRTC.cpp」と「model/robot/RTC/RobotControllerRTC.h」に保存されています。
 
@@ -183,7 +196,7 @@ SR1WalkControllerRTC.h を基にしています。 ::
 --------------------------
 
 シミュレーションツールバーの「シミュレーション開始ボタン」を押します。
-シミュレーションを実行するとchoreonoidを実行している端末に関節角度が表示されるはずです。
+シミュレーションを実行するとchoreonoidを実行している端末に関節角度(m_angle)の値が表示されるはずです。
 
 .. image:: images/output.png
 
