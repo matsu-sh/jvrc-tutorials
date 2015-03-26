@@ -39,6 +39,83 @@ JVRC モデルに搭載されているセンサは、テキストエディタで
    	  ]
    	}
    
+他にも、力センサ rfsensor, lfsensorが搭載されていることが分かります。 ::
+
+   				DEF rfsensor ForceSensor {
+   				  sensorId 0
+   				}
+
+   				DEF lfsensor ForceSensor {
+   				  sensorId 1
+   				}
+
+カメラ rcamera, lcamera、距離センサ ranger も確認することができます。 ::
+
+   			    DEF NECK_P Joint {
+   			      jointType "rotate"
+   			      jointAxis "Y"
+   			      jointId 17
+   			      ulimit [1.0471975511965976] #+60
+   			      llimit [-0.8726646259971648] #-50
+   			      uvlimit [ 5.75958]
+   			      lvlimit [-5.75958]
+   			      rotorInertia 0.0596
+   			      children [
+   			        DEF NECK_P_S Segment {
+   				  mass 2
+   				  centerOfMass 0.01 0 0.11
+   				  momentsOfInertia [0.00968 0 0 0 0.00968 0 0 0 0.00968]
+   				  children [
+   				    Inline { url "head.wrl" }
+   				  ]
+   				}
+   				DEF rcamera VisionSensor {
+   				  translation 0.1 -0.03 0.09
+   				  rotation      0.4472 -0.4472 -0.7746 1.8235
+   				  frontClipDistance 0.05
+   				  width 640
+   				  height 480
+   				  type "COLOR"
+   				  sensorId 0
+   				  fieldOfView 1.0
+   				} 
+   				DEF lcamera VisionSensor {
+   				  translation 0.1 0.03 0.09
+   				  rotation      0.4472 -0.4472 -0.7746 1.8235
+   				  frontClipDistance 0.05
+   				  width 640
+   				  height 480
+   				  type "COLOR"
+   				  sensorId 1
+   				  fieldOfView 1.0
+   				} 
+   				DEF ranger RangeSensor {
+   				  translation 0.1 0.0 0.0
+   				  rotation      0.4472 -0.4472 -0.7746 1.8235
+   				  sensorId 0
+   				  scanAngle 1.5707963267948966
+   				  scanStep 0.011344640137963142
+   				  scanRate 100
+   				  minDistance 0.1
+   				  maxDistance 30.0
+   				} 
+   			      ]
+   			    } # NECK_P
+
+各センサの仕様について解説します。
+
+加速度センサの値はTimedDoubleSeq型になります。
+
+ジャイロセンサの値はTimedDoubleSeq型になります。
+
+力センサの値はTimedDoubleSeq型になります。
+
+カメラの値はTimedLongSeq型になります。width x heightの各ピクセルの色情報が1ピクセル当たり4バイト(long型)としてTimedLongSeqのdata部分に格納されます。
+今回のカメラの場合、width = 640, height = 480と定義されているので、640x480のデータとなります。
+
+距離センサの値はTimedDoubleSeq型になります。
+シーケンスに計測方向に向かって右からスキャンした距離データが格納されています。
+距離の値は何かに干渉が発生する限り出力されますが、干渉がない場合は0になります。
 
 
 コントローラのソースコード
