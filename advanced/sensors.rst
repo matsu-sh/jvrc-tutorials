@@ -103,19 +103,117 @@ JVRC モデルに搭載されているセンサは、テキストエディタで
    			    } # NECK_P
 
 各センサの仕様について解説します。
+おおまかな仕様はこちらで確認することができます。
 
-加速度センサの値はTimedDoubleSeq型になります。
+http://www.openrtp.jp/openhrp3/jp/controller_bridge.html
 
-ジャイロセンサの値はTimedDoubleSeq型になります。
+加速度センサの値はTimedAcceleration3D型になります。関節角度の二回微分(加速度)が格納されています。 ::
 
-力センサの値はTimedDoubleSeq型になります。
+    struct Acceleration3D
+    {
+        /// Acceleration along the x axis, in metres per second per second.
+        double ax;
+        /// Acceleration along the y axis, in metres per second per second.
+        double ay;
+        /// Acceleration along the z axis, in metres per second per second.
+        double az;
+    };
+    /*!
+     * @struct TimedAcceleration3D
+     * @brief Time-stamped version of Acceleration3D.
+     */
+    struct TimedAcceleration3D
+    {
+        Time tm;
+        Acceleration3D data;
+    };
 
-カメラの値はTimedLongSeq型になります。width x heightの各ピクセルの色情報が1ピクセル当たり4バイト(long型)としてTimedLongSeqのdata部分に格納されます。
+
+ジャイロセンサの値はTimedVelocity3D型になります。三次元ベクトルのジャイロ(角速度)が格納されています。 ::
+
+    struct Velocity3D
+    {
+        /// Velocity along the x axis in metres per second.
+        double vx;
+        /// Velocity along the y axis in metres per second.
+        double vy;
+        /// Velocity along the z axis in metres per second.
+        double vz;
+        /// Roll velocity in radians per second.
+        double vr;
+        /// Pitch velocity in radians per second.
+        double vp;
+        /// Yaw velocity in radians per second.
+        double va;
+    };
+    /*!
+     * @struct TimedVelocity3D
+     * @brief Time-stamped version of Velocity3D.
+     */
+    struct TimedVelocity3D
+    {
+        Time tm;
+        Velocity3D data;
+    };
+
+力センサの値は要素数6のTimedDoubleSeq型になります。3次元ベクトルの力と3次元ベクトルのトルクが格納されています。
+
+カメラの値はImg::TimedCameraImage型になります。
+
+https://github.com/s-nakaoka/choreonoid/blob/master/src/OpenRTMPlugin/corba/CameraImage.idl
+
+Img::TimedCameraImageの型の定義は以下のようになっています。 ::
+
+   enum ColorFormat
+   {
+     CF_UNKNOWN, CF_GRAY, CF_RGB,
+     CF_GRAY_JPEG, CF_RGB_JPEG // local extension
+   };
+
+   struct ImageData
+   {
+     long width;
+     long height;
+     ColorFormat format;
+     sequence<octet> raw_data;
+   };
+
+   struct CameraImage
+   {
+     RTC::Time captured_time;
+     ImageData image;
+     CameraIntrinsicParameter intrinsic;
+     Mat44 extrinsic;
+   };
+   struct TimedCameraImage
+   {
+     RTC::Time tm;
+     CameraImage data;
+     long error_code;
+   };
+
+
+width x heightの各ピクセルの色情報が1ピクセル当たりformatとしてdata.image.raw_date部分に格納されます。
 今回のカメラの場合、width = 640, height = 480と定義されているので、640x480のデータとなります。
 
-距離センサの値はTimedDoubleSeq型になります。
+距離センサの値はRangeData型になります。 ::
+
+    typedef sequence<double> RangeList;
+    struct RangeData
+    {
+        /// Time stamp.
+        Time tm;
+        /// Range values in metres.
+        RangeList ranges;
+        /// Geometry of the ranger at the time the scan data was measured.
+        RangerGeometry geometry;
+        /// Configuration of the ranger at the time the scan data was measured.
+        RangerConfig config;
+    };
+
+
 シーケンスに計測方向に向かって右からスキャンした距離データが格納されています。
-距離の値は何かに干渉が発生する限り出力されますが、干渉がない場合は0になります。
+距離の値は何かに干渉が発生する限り出力されますが、干渉がない場合は0になります。 ::
 
 
 コントローラのソースコード

@@ -61,7 +61,8 @@ RTコンポーネントのコントローラの接続
    #endif
 
 `RTC::TimedDoubleSeq` というのは、時刻情報とdouble型の実際の値を持つOpenRTM固有の複合型です。
-OpenRTMにおけるdouble型と考えておけばよいでしょう。
+SeqはOpenRTMにおける配列型のように扱います。
+OpenRTMにおけるdouble[]型と考えておけばよいでしょう。
 
 `RTC::InPort<RTC::TimedDoubleSeq>` はRTCの入力ポートを表す型であり、入力ポートを操作するにはこれを利用します。
 m_angleは入力ポートから関節角度を受けとるための変数です。m_angleInで取得した値はm_angleで参照します。
