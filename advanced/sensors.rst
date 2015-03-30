@@ -103,60 +103,15 @@ JVRC モデルに搭載されているセンサは、テキストエディタで
    			    } # NECK_P
 
 各センサの仕様について解説します。
-おおまかな仕様はこちらで確認することができます。
+おおまかな仕様はこちらで確認することができますが、記述がかなり古く不正確です。
 
 http://www.openrtp.jp/openhrp3/jp/controller_bridge.html
 
-加速度センサの値はTimedAcceleration3D型になります。関節角度の二回微分(加速度)が格納されています。 ::
+加速度センサの値は要素数3のTimedDoubleSeq型になります。それぞれの方向の関節角度の二回微分(加速度)が格納されています。
 
-    struct Acceleration3D
-    {
-        /// Acceleration along the x axis, in metres per second per second.
-        double ax;
-        /// Acceleration along the y axis, in metres per second per second.
-        double ay;
-        /// Acceleration along the z axis, in metres per second per second.
-        double az;
-    };
-    /*!
-     * @struct TimedAcceleration3D
-     * @brief Time-stamped version of Acceleration3D.
-     */
-    struct TimedAcceleration3D
-    {
-        Time tm;
-        Acceleration3D data;
-    };
+ジャイロセンサの値は要素数3のTimedDoubleSeq型になります。三次元ベクトルのジャイロ(角速度)が格納されています。
 
-
-ジャイロセンサの値はTimedVelocity3D型になります。三次元ベクトルのジャイロ(角速度)が格納されています。 ::
-
-    struct Velocity3D
-    {
-        /// Velocity along the x axis in metres per second.
-        double vx;
-        /// Velocity along the y axis in metres per second.
-        double vy;
-        /// Velocity along the z axis in metres per second.
-        double vz;
-        /// Roll velocity in radians per second.
-        double vr;
-        /// Pitch velocity in radians per second.
-        double vp;
-        /// Yaw velocity in radians per second.
-        double va;
-    };
-    /*!
-     * @struct TimedVelocity3D
-     * @brief Time-stamped version of Velocity3D.
-     */
-    struct TimedVelocity3D
-    {
-        Time tm;
-        Velocity3D data;
-    };
-
-力センサの値は要素数6のTimedDoubleSeq型になります。3次元ベクトルの力と3次元ベクトルのトルクが格納されています。
+力センサの値は要素数24のTimedDoubleSeq型になります。3次元ベクトルの力と3次元ベクトルのトルクが格納されています。
 
 カメラの値はImg::TimedCameraImage型になります。
 
@@ -230,12 +185,15 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
    #define RobotSensorsControllerRTC_H
    
    #include <rtm/idl/BasicDataTypeSkel.h>
+   #include <rtm/idl/ExtendedDataTypes.hh>
+   #include <rtm/idl/InterfaceDataTypes.hh>
    #include <rtm/Manager.h>
    #include <rtm/DataFlowComponentBase.h>
    #include <rtm/CorbaPort.h>
    #include <rtm/DataInPort.h>
    #include <rtm/DataOutPort.h>
    #include <cnoid/MultiValueSeq>
+   // #include <cnoid/corba/CameraImage.hh>
    
    class RobotSensorsControllerRTC : public RTC::DataFlowComponentBase
    {
@@ -256,6 +214,16 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
        RTC::InPort<RTC::TimedDoubleSeq> m_gsensorIn;
        RTC::TimedDoubleSeq m_gyrometer;
        RTC::InPort<RTC::TimedDoubleSeq> m_gyrometerIn;
+       RTC::TimedDoubleSeq m_lfsensor;
+       RTC::InPort<RTC::TimedDoubleSeq> m_lfsensorIn;
+       RTC::TimedDoubleSeq m_rfsensor;
+       RTC::InPort<RTC::TimedDoubleSeq> m_rfsensorIn;
+       // Img::TimedCameraImage m_lcamera;
+       // RTC::InPort<Img::TimedCameraImage> m_lcameraIn;
+       // Img::TimedCameraImage m_rcamera;
+       // RTC::InPort<Img::TimedCameraImage> m_rcameraIn;
+       RTC::RangeData m_ranger;
+       RTC::InPort<RTC::RangeData> m_rangerIn;
    };
    
    extern "C"
@@ -305,7 +273,13 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
        : RTC::DataFlowComponentBase(manager),
          m_angleIn("q", m_angle),
          m_gsensorIn("gsensor", m_gsensor),
-         m_gyrometerIn("gyrometer", m_gyrometer)
+         m_gyrometerIn("gyrometer", m_gyrometer),
+         m_lfsensorIn("lfsensor", m_lfsensor),
+         m_rfsensorIn("rfsensor", m_rfsensor),
+         m_rangerIn("ranger", m_ranger)
+         // m_lcameraIn("lcamera", m_lcamera),
+         // m_rcameraIn("rcamera", m_rcamera),
+         // m_rangerIn("ranger", m_ranger)
    {
    
    }
@@ -322,6 +296,13 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
        addInPort("q", m_angleIn);
        addInPort("gsensor", m_gsensorIn);
        addInPort("gyrometer", m_gyrometerIn);
+       addInPort("lfsensor", m_lfsensorIn);
+       addInPort("rfsensor", m_rfsensorIn);
+       // addInPort("lcamera", m_lcameraIn);
+       // addInPort("rcamera", m_rcameraIn);
+       addInPort("ranger", m_rangerIn);
+   
+       cout << "hoge" << endl;
    
        return RTC::RTC_OK;
    }
@@ -340,29 +321,70 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
    RTC::ReturnCode_t RobotSensorsControllerRTC::onExecute(RTC::UniqueId ec_id)
    {
        if(m_angleIn.isNew()){
-           m_angleIn.read();
+               m_angleIn.read();
        }
    
        for(size_t i=0; i < m_angle.data.length(); ++i){
-               cout << "m_angle.data[" << i << "] is " << m_angle.data[i] << std::endl;
+               // cout << "m_angle.data[" << i << "] is " << m_angle.data[i] << std::endl;
        }
    
        if(m_gsensorIn.isNew()){
-           m_gsensorIn.read();
+               m_gsensorIn.read();
        }
    
        for(size_t i=0; i < m_gsensor.data.length(); ++i){
-               cout << "m_gsensorIn.data[" << i << "] is " << m_gsensor.data[i] << std::endl;
+               cout << "m_gsensor.data[" << i << "] is " << m_gsensor.data[i] << std::endl;
        }
    
        if(m_gyrometerIn.isNew()){
-           m_gyrometerIn.read();
+               m_gyrometerIn.read();
        }
    
        for(size_t i=0; i < m_gyrometer.data.length(); ++i){
-               cout << "m_gyrometerIn.data[" << i << "] is " << m_gyrometer.data[i] << std::endl;
+               cout << "m_gyrometer.data[" << i << "] is " << m_gyrometer.data[i] << std::endl;
        }
    
+       if(m_lfsensorIn.isNew()){
+               m_lfsensorIn.read();
+       }
+   
+       for(size_t i=0; i < m_lfsensor.data.length(); ++i){
+               cout << "m_lfsensorIn.data[" << i << "] is " << m_lfsensor.data[i] << std::endl;
+       }
+   
+       if(m_rfsensorIn.isNew()){
+               m_rfsensorIn.read();
+       }
+   
+       for(size_t i=0; i < m_rfsensor.data.length(); ++i){
+               cout << "m_rfsensorIn.data[" << i << "] is " << m_rfsensor.data[i] << std::endl;
+       }
+   
+       // if(m_lcameraIn.isNew()){
+       //     m_lcameraIn.read();
+       // }
+       //
+       // for(size_t i=0; i < m_lcamera.data.image.raw_data.length(); ++i){
+       //         cout << "m_lcameraIn.data.image.raw_data[" << i <<
+       //                 "] is " << m_lcamera.data.image.raw_data[i] << std::endl;
+       // }
+       //
+       // if(m_rcameraIn.isNew()){
+       //     m_rcameraIn.read();
+       // }
+       //
+       // for(size_t i=0; i < m_rcamera.data.image.raw_data.length(); ++i){
+       //         cout << "m_rcameraIn.data.image.raw_data[" << i <<
+       //                 "] is " << m_rcamera.data.image.raw_data[i] << std::endl;
+       // }
+   
+       if(m_rangerIn.isNew()){
+               m_rangerIn.read();
+       }
+   
+       for(size_t i=0; i < m_ranger.ranges.length(); ++i){
+               cout << "m_rangerIn.ranges[" << i << "] is " << m_ranger.ranges[i] << std::endl;
+       }
        return RTC::RTC_OK;
    }
    
@@ -378,17 +400,39 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
        }
    };
 
-
 それぞれで行っている処理については、「RTコンポーネントのコントローラの接続」とほとんど同じで、センサが増えただけです。
 
 これらのソースコードは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotSensorsControllerRTC.cpp」と「model/robot/RTC/RobotSensorsControllerRTC.h」に保存されています。
+
+コントローラの設定ファイル
+--------------------------
+
+今回のコントローラは複雑なので、設定ファイルを用いて各種ポートを定義する必要があります。次のような設定ファイルを用意し、ファイル名を「RobotSensorsJVRC.conf」とします。これを「model/robot/RTC/」ディレクトリに置くとコントローラのビルド後のインストール作業においてインストールされます。 ::
+
+   out-port = q:JOINT_VALUE
+   out-port = gsensor:ACCELERATION_SENSOR
+   out-port = gyrometer:RATE_GYRO_SENSOR
+   out-port = lfsensor:FORCE_SENSOR
+   out-port = rfsensor:FORCE_SENSOR
+   out-port = ranger:RANGE_SENSOR
+   connection = q:RobotSensorsControllerRTC0:q
+   connection = gsensor:RobotSensorsControllerRTC0:gsensor
+   connection = gyrometer:RobotSensorsControllerRTC0:gyrometer
+   connection = lfsensor:RobotSensorsControllerRTC0:lfsensor
+   connection = rfsensor:RobotSensorsControllerRTC0:rfsensor
+   connection = ranger:RobotSensorsControllerRTC0:ranger
+
+この設定ファイルの仕様は OpenHRP3 をベースにしているので以下を参考にしてください。
+ただし、下記の資料は記述が古いです。
+
+http://www.openrtp.jp/openhrp3/jp/controller_bridge.html
 
 コントローラのビルド
 --------------------
 
 「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに移動し、makeコマンドを実行します。
 
-「model/robot/RTC/」ディレクトリに「RobotControllerSensorsRTC.so」というファイルが作成されるはずです。
+「model/robot/RTC/」ディレクトリに「RobotSensorsControllerRTC.so」というファイルが作成されるはずです。
 
 その後、次のコマンドを実行します。 ::
 
@@ -398,14 +442,33 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
 ------------------
 
 アイテムビューで「BodyRTC」を選択し、プロパティビューの「コントローラのモジュール名」を「RobotSensorsControllerRTC」とします。これは「コントローラのビルド」で作成したモジュールのパスと対応しています。
+更に、「設定モード」を「設定ファイルを使用」にし、「設定ファイル名」を「RobotSensorsJVRC.conf」とします。
 
+.. image:: images/sensor_config.png
+
+カメラ、距離センサの有効化
+--------------------------
+
+シミュレーションにおいてカメラや距離センサを有効にするため、以下の作業を行います。
+
+アイテムビューで「AISTSimulator」を選択し、「新規」より「GL視覚センサシミュレータ」を選択し、「GLVisionSimulator」という名前で追加します。
+
+.. image:: images/vision.png
+
+「GLVisionSimulator」を選択し、プロパティを以下のように変更します。
+
+「対象ボディ」を「JVRC」
+
+「対象センサ」を「ranger」
+
+.. image:: images/vision_property.png
 
 シミュレーションを実行する
 --------------------------
 
 シミュレーションツールバーの「シミュレーション開始ボタン」を押します。
 シミュレーションを実行するとchoreonoidを実行している端末にセンサの値が出力されています。
-「RTコンポーネントのコントローラの接続」のときとは違い、関節角度(m_angle.data)だけではなく、 加速度センサ(m_gsensor)、ジャイロセンサ(m_gyrometer)の値が表示されるはずです。
+「RTコンポーネントのコントローラの接続」のときとは違い、関節角度(m_angle)だけではなく、 加速度センサ(m_gsensor)、ジャイロセンサ(m_gyrometer)……の値が表示されるはずです。
 
 .. image:: images/output2.png
 
@@ -413,8 +476,9 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
 サンプルプロジェクトについて
 ----------------------------
 
-このサンプルのプロジェクトファイルは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/samples/sample3.cnoid」に保存されています。
+このサンプルのプロジェクトファイルは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/samples/sample4.cnoid」に保存されています。
 
 .. toctree::
    :maxdepth: 2
+
 
