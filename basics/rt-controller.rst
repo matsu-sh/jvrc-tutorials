@@ -185,13 +185,17 @@ m_angle.dataは各関節毎に配列の値となっています。
 コントローラのビルド
 --------------------
 
-「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに移動し、makeコマンドを実行します。
+「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに移動し、次のコマンドを実行します。 ::
 
-「model/robot/RTC/」ディレクトリに「RobotControllerRTC.so」というファイルが作成されるはずです。
+   make
+
+これにより、「model/robot/RTC/」ディレクトリに「RobotControllerRTC.so」というファイルが作成されるはずです。
 
 その後、次のコマンドを実行します。 ::
 
    sudo make install DESTDIR=/usr
+
+Choreonoidでは読み込むRTCコントローラのモジュールはChoreonoidのインストール先の共有ディレクトリ(/usr/lib/choreonoid-1.5/rtc)に配置しなければなりません。"make install"ではこの処理を自動的に行ってくれます。
 
 シミュレーションを実行する
 --------------------------

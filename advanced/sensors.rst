@@ -403,10 +403,13 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
 
 これらのソースコードは「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/RobotSensorsControllerRTC.cpp」と「model/robot/RTC/RobotSensorsControllerRTC.h」に保存されています。
 
-コントローラの設定ファイル
---------------------------
+RTCの設定ファイル
+-----------------
 
-今回のコントローラは複雑なので、設定ファイルを用いて各種ポートを定義する必要があります。次のような設定ファイルを用意し、ファイル名を「RobotSensorsJVRC.conf」とします。これを「model/robot/RTC/」ディレクトリに置くとコントローラのビルド後のインストール作業においてインストールされます。 ::
+これまではChoreonoidの自動設定の機能を用いてRTCのポートを生成していました。
+しかし、これはサンプル実行用のもので、単純なRTCのポート定義にしか使えません。
+
+今回のロボット用のRTCは複雑なので、設定ファイルを用いて各種ポートを定義する必要があります。次のような設定ファイルを用意し、ファイル名を「RobotSensorsJVRC.conf」とします。これを「model/robot/RTC/」ディレクトリに置くとコントローラのビルド後のインストール作業においてインストールされます。 ::
 
    out-port = q:JOINT_VALUE
    out-port = gsensor:ACCELERATION_SENSOR
@@ -421,6 +424,14 @@ width x heightの各ピクセルの色情報が1ピクセル当たりformatと�
    connection = rfsensor:RobotSensorsControllerRTC0:rfsensor
    connection = ranger:RobotSensorsControllerRTC0:ranger
 
+out-portとは、RTCの出力ポートの定義です。「ポート名：型」の形式で定義します。
+
+これがin-portになると入力ポートの定義となります。今回はトルクの計算がないため使用していません。
+
+connectionとはRTCのポート接続の設定となります。例えば、「q:RobotSensorsControllerRTC0:q」とはこのRTCのポートqとRobotSensorsControllerRTC0コントローラとの接続設定になります。
+
+ちなみに、コントローラのポート設定に関しては、コントローラのソースコード中で動的に生成と設定がされるので設定ファイルを用いる必要はありません。
+
 この設定ファイルの仕様は OpenHRP3 をベースにしているので以下を参考にしてください。
 ただし、下記の資料は記述が古いです。
 
@@ -429,13 +440,17 @@ http://www.openrtp.jp/openhrp3/jp/controller_bridge.html
 コントローラのビルド
 --------------------
 
-「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに移動し、makeコマンドを実行します。
+「モデルファイルのインストール」でダウンロードしたリポジトリの「model/robot/RTC/」ディレクトリに移動し、次のコマンドを実行します。 ::
 
-「model/robot/RTC/」ディレクトリに「RobotSensorsControllerRTC.so」というファイルが作成されるはずです。
+   make
+
+これにより、「model/robot/RTC/」ディレクトリに「RobotSensorsControllerRTC.so」というファイルが作成されるはずです。
 
 その後、次のコマンドを実行します。 ::
 
    sudo make install DESTDIR=/usr
+
+ChoreonoidではRTCの設定ファイルはChoreonoidのインストール先の共有ディレクトリ(/usr/lib/choreonoid-1.5/rtc)に配置しなければなりません。"make install"ではこの処理を自動的に行ってくれます。
 
 コントローラの設定
 ------------------
@@ -467,7 +482,7 @@ http://www.openrtp.jp/openhrp3/jp/controller_bridge.html
 
 シミュレーションツールバーの「シミュレーション開始ボタン」を押します。
 シミュレーションを実行するとchoreonoidを実行している端末にセンサの値が出力されています。
-「RTコンポーネントのコントローラの接続」のときとは違い、関節角度(m_angle)だけではなく、 加速度センサ(m_gsensor)、ジャイロセンサ(m_gyrometer)……の値が表示されるはずです。
+「RTコンポーネントのコントローラの接続」のときとは違い、関節角度(m_angle)だけではなく、 加速度センサ(m_gsensor)、ジャイロセンサ(m_gyrometer)、……の値が表示されるはずです。
 
 .. image:: images/output2.png
 
