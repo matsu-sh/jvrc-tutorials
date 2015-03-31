@@ -53,6 +53,7 @@ Choreonoid の画面にはアイテムと表示されている領域がありま
 .. image:: images/simulation_start.png
 
 シミュレーションを実行すると下の画像のようにロボットはすぐに崩れ落ちてしまうはずです。
+再生スライダーを動かして詳細に確認すると、0.2秒の段階で足が崩れ始め、1.3秒時点で完全に崩れてしまいます。
 
 .. image:: images/simulation_no_controller.png
 
